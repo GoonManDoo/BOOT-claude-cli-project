@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>회원 목록</title>
+    <link rel="stylesheet" th:href="@{/css/board.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main>
+    <h2>회원 목록 <small th:text="|(${members.totalElements}명)|">(0명)</small></h2>
+    <p><a th:href="@{/admin}">관리자 홈</a></p>
+    <table class="post-table">
+        <thead><tr><th>번호</th><th>아이디</th><th>닉네임</th><th>이메일</th><th>권한</th><th>가입일</th></tr></thead>
+        <tbody>
+        <tr th:each="m : ${members.content}">
+            <td th:text="${m.id}">1</td>
+            <td th:text="${m.loginId}">tester01</td>
+            <td th:text="${m.nickname}">테스터</td>
+            <td th:text="${m.email}">a@b.com</td>
+            <td th:text="${m.role}">USER</td>
+            <td th:text="${m.createdAt} ? ${#temporals.format(m.createdAt, 'yyyy-MM-dd')} : '-'">2026-01-01</td>
+        </tr>
+        </tbody>
+    </table>
+    <nav class="pagination" th:if="${nav.totalPages > 1}">
+        <th:block th:each="n : ${#numbers.sequence(nav.startPage, nav.endPage)}">
+            <strong th:if="${n == nav.currentPage}" th:text="${n}">1</strong>
+            <a th:unless="${n == nav.currentPage}" th:href="@{/admin/members(page=${n})}" th:text="${n}">2</a>
+        </th:block>
+    </nav>
+</main>
+</body>
+</html>

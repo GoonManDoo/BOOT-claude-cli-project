@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>게시판</title>
+    <link rel="stylesheet" th:href="@{/css/board.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main>
+    <p th:if="${param.logout}" class="info">로그아웃되었습니다.</p>
+    <p th:if="${flashMessage}" class="info" th:text="${flashMessage}">메시지</p>
+
+    <!--/* 카테고리 탭: 탭을 바꾸면 검색어는 비우고 정렬만 유지한다 */-->
+    <nav class="tabs">
+        <a th:href="@{/posts(sort=${cond.sort})}" th:classappend="${cond.categoryId == null} ? 'active'">전체</a>
+        <a th:each="c : ${categories}"
+           th:href="@{/posts(categoryId=${c.id}, sort=${cond.sort})}"
+           th:classappend="${cond.categoryId == c.id} ? 'active'"
+           th:text="${c.name}">자유</a>
+    </nav>
+
+    <!--/* 검색/정렬 폼. GET이라 조건이 주소에 남는다 → 새로고침, 뒤로 가기, 링크 공유에도 조건이 유지된다 */-->
+    <form th:action="@{/posts}" method="get" th:object="${cond}" class="toolbar">
+        <input type="hidden" th:field="*{categoryId}">
+        <select th:field="*{type}">
+            <option th:each="t : ${searchTypes}" th:value="${t}" th:text="${t.label}">제목+내용</option>
+        </select>
+        <input type="text" th:field="*{keyword}" placeholder="검색어">
+        <button type="submit">검색</button>
+        <!--/* 정렬을 바꾸면 현재 검색 조건과 함께 바로 다시 조회 (페이지는 1로) */-->
+        <select th:field="*{sort}" onchange="this.form.submit()">
+            <option th:each="s : ${sorts}" th:value="${s}" th:text="${s.label}">최신순</option>
+        </select>
+        <a th:if="${cond.keyword}" th:href="@{/posts(categoryId=${cond.categoryId})}">검색 해제</a>
+        <a sec:authorize="isAuthenticated()" th:href="@{/posts/new}" class="button">글쓰기</a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/notices/new}" class="button">공지 쓰기</a>
+    </form>
+
+    <table class="post-table">
+        <thead>
+        <tr>
+            <th>번호</th><th>분류</th><th>제목</th><th>작성자</th><th>조회</th><th>좋아요</th><th>작성일</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!--/* 공지: 페이지/카테고리와 상관없이 항상 맨 위 */-->
+        <tr th:each="p : ${notices}" class="notice-row">
+            <td><span class="badge">공지</span></td>
+            <td th:text="${p.categoryName}">자유</td>
+            <td class="title">
+                <a th:href="@{/posts/{id}(id=${p.id})}" th:text="${p.title}">공지 제목</a>
+                <span th:if="${p.commentCount > 0}" class="comment-count" th:text="|[${p.commentCount}]|">[3]</span>
+            </td>
+            <td th:text="${p.authorNickname}">관리자</td>
+            <td th:text="${p.viewCount}">0</td>
+            <td th:text="${p.likeCount}">0</td>
+            <td th:text="${#temporals.format(p.createdAt, 'yyyy-MM-dd HH:mm')}">2026-01-01</td>
+        </tr>
+
+        <tr th:if="${posts.empty}">
+            <td colspan="7" class="empty">게시글이 없습니다.</td>
+        </tr>
+        <tr th:each="p : ${posts.content}">
+            <td th:text="${p.id}">1</td>
+            <td th:text="${p.categoryName}">자유</td>
+            <td class="title">
+                <a th:href="@{/posts/{id}(id=${p.id})}" th:text="${p.title}">제목</a>
+                <span th:if="${p.commentCount > 0}" class="comment-count" th:text="|[${p.commentCount}]|">[3]</span>
+            </td>
+            <td th:text="${p.authorNickname}">작성자</td>
+            <td th:text="${p.viewCount}">0</td>
+            <td th:text="${p.likeCount}">0</td>
+            <td th:text="${#temporals.format(p.createdAt, 'yyyy-MM-dd HH:mm')}">2026-01-01</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!--/* 페이지 번호: 링크마다 검색 조건을 같이 붙여서 페이지를 옮겨도 조건이 유지된다 */-->
+    <nav class="pagination" th:if="${nav.totalPages > 0}">
+        <a th:if="${nav.hasPrevious}"
+           th:href="@{/posts(page=${nav.previousPage}, categoryId=${cond.categoryId}, type=${cond.type}, keyword=${cond.keyword}, sort=${cond.sort})}">이전</a>
+        <th:block th:each="n : ${#numbers.sequence(nav.startPage, nav.endPage)}">
+            <strong th:if="${n == nav.currentPage}" th:text="${n}">1</strong>
+            <a th:unless="${n == nav.currentPage}"
+               th:href="@{/posts(page=${n}, categoryId=${cond.categoryId}, type=${cond.type}, keyword=${cond.keyword}, sort=${cond.sort})}"
+               th:text="${n}">2</a>
+        </th:block>
+        <a th:if="${nav.hasNext}"
+           th:href="@{/posts(page=${nav.nextPage}, categoryId=${cond.categoryId}, type=${cond.type}, keyword=${cond.keyword}, sort=${cond.sort})}">다음</a>
+    </nav>
+</main>
+</body>
+</html>

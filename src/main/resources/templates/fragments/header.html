@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<!--/* 모든 화면 상단에 들어가는 공통 메뉴. 사용: <div th:replace="~{fragments/header :: header}"></div> */-->
+<header th:fragment="header" class="site-header">
+    <h1><a th:href="@{/posts}">게시판</a></h1>
+    <nav>
+        <span sec:authorize="isAnonymous()">
+            <a th:href="@{/login}">로그인</a> |
+            <a th:href="@{/members/join}">회원가입</a>
+        </span>
+        <span sec:authorize="isAuthenticated()">
+            <strong sec:authentication="principal.nickname">닉네임</strong>님
+            <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}">관리자 페이지</a>
+            <!--/* 로그아웃은 CSRF 보호를 위해 링크(GET)가 아니라 POST 폼으로 보낸다 */-->
+            <form th:action="@{/logout}" method="post" class="inline">
+                <button type="submit">로그아웃</button>
+            </form>
+        </span>
+    </nav>
+</header>
+</body>
+</html>

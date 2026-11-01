@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>오류</title>
+</head>
+<body>
+<!--/*
+    (Thymeleaf 주석: 서버에서만 보이고 브라우저로 전송되지 않는다)
+    이 화면을 쓰는 곳은 두 군데다.
+    1) GlobalExceptionHandler: status와 errorMessage(ErrorCode의 메시지)를 넣어 준다.
+    2) Spring Boot 기본 에러 처리(/error): Security의 403처럼 컨트롤러 밖에서 난 에러.
+       errorMessage가 없으므로 상태 코드별 기본 문구를 보여 준다.
+       (Boot가 주는 message는 "Forbidden" 같은 영어 문구라 쓰지 않는다)
+*/-->
+<h1 th:text="${status} ?: '오류'">500</h1>
+
+<p th:if="${errorMessage}" th:text="${errorMessage}">에러 메시지</p>
+<p th:unless="${errorMessage}" th:switch="${status}">
+    <span th:case="401">로그인이 필요합니다.</span>
+    <span th:case="403">접근 권한이 없습니다.</span>
+    <span th:case="404">페이지를 찾을 수 없습니다.</span>
+    <span th:case="413">업로드할 수 있는 크기를 넘었습니다. (이미지는 한 장에 5MB까지)</span>
+    <span th:case="*">요청을 처리하는 중 오류가 발생했습니다.</span>
+</p>
+
+<p><a th:href="@{/}">홈으로</a></p>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>로그인</title>
+    <style>
+        .field { margin-bottom: 12px; }
+        .error { color: #d32f2f; }
+        .info { color: #2e7d32; }
+    </style>
+</head>
+<body>
+<h1>로그인</h1>
+
+<!-- 쿼리 파라미터로 상태 메시지 표시: /login?error, /login?joined -->
+<p class="error" th:if="${param.error}">아이디 또는 비밀번호가 올바르지 않습니다.</p>
+<p class="info" th:if="${param.joined}">회원가입이 완료되었습니다. 로그인해 주세요.</p>
+
+<!-- POST /login 은 Spring Security가 처리한다. th:action이 CSRF 토큰을 자동으로 넣는다. -->
+<form th:action="@{/login}" method="post">
+    <div class="field">
+        <label for="loginId">아이디</label><br>
+        <!-- name은 SecurityConfig의 usernameParameter("loginId")와 같아야 한다 -->
+        <input type="text" id="loginId" name="loginId" required autofocus>
+    </div>
+    <div class="field">
+        <label for="password">비밀번호</label><br>
+        <input type="password" id="password" name="password" required>
+    </div>
+    <button type="submit">로그인</button>
+</form>
+
+<p>
+    <a th:href="@{/members/join}">회원가입</a> |
+    <a th:href="@{/}">홈으로</a>
+</p>
+</body>
+</html>

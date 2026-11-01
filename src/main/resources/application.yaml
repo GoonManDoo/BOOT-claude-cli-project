@@ -11,6 +11,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+    # 화면을 그리는 동안 DB 연결을 열어 두지 않는다.
+    # 지연 로딩은 Service(@Transactional) 안에서 끝내고, 화면에는 DTO만 넘긴다.
+    open-in-view: false
     show-sql: true
     properties:
       hibernate:
@@ -19,5 +22,29 @@ spring:
   thymeleaf:
     cache: false
 
+  servlet:
+    multipart:
+      # 서버가 받아 주는 최대 크기 (넘으면 업로드 자체가 거절됨).
+      # 실제 허용 기준(장당 5MB, 5장)은 아래 board.upload에서 검사해서 친절한 메시지로 보여 준다.
+      max-file-size: 10MB
+      max-request-size: 60MB
+
 server:
   port: 8080
+
+board:
+  upload:
+    # 프로젝트 밖의 폴더에 저장한다. 환경 변수 UPLOAD_DIR로 바꿀 수 있다.
+    dir: ${UPLOAD_DIR:${user.home}/board-uploads}
+    max-file-size: 5MB
+    max-count: 5
+
+  holiday:
+    # 키 없이 쓸 수 있는 공개 공휴일 API (https://date.nager.at)
+    # 키가 필요한 API라면 api-key: ${HOLIDAY_API_KEY:} 처럼 환경 변수로 받는다.
+    base-url: ${HOLIDAY_API_URL:https://date.nager.at}
+    country-code: KR
+    connect-timeout: 2s
+    read-timeout: 3s
+    # 호출에 실패하면 이 시간 동안은 다시 호출하지 않는다 (외부 API가 죽었을 때 매 요청이 타임아웃까지 기다리지 않게)
+    failure-backoff: 1m

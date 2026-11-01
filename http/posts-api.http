@@ -1,0 +1,82 @@
+### 게시글 REST API 테스트 (IntelliJ HTTP Client)
+# 사용법: 앱을 실행(bootRun)한 뒤, 각 요청 왼쪽의 ▶ 버튼을 누른다.
+# 인증: API는 HTTP Basic을 쓴다. 아래 계정은 실제로 가입한 아이디/비밀번호로 바꿔서 쓴다.
+# (IntelliJ는 "Authorization: Basic 아이디 비밀번호"를 자동으로 Base64 인코딩해 준다)
+
+@host = http://localhost:8080
+@loginId = tester01
+@password = password123
+@otherLoginId = tester03
+
+### 1) 목록 (로그인 불필요) - 페이지, 카테고리, 검색, 정렬
+GET {{host}}/api/posts?page=1&categoryId=1&type=TITLE_CONTENT&keyword=post&sort=LATEST
+
+### 2) 상세 (로그인 불필요)
+GET {{host}}/api/posts/1
+
+### 3) 작성 → 201 Created + Location 헤더
+POST {{host}}/api/posts
+Authorization: Basic {{loginId}} {{password}}
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "title": "API로 쓴 글",
+  "content": "HTTP Client에서 보냈습니다."
+}
+
+> {%
+    // 응답의 새 글 id를 저장해 두고 아래 요청에서 {{postId}}로 쓴다
+    client.global.set("postId", response.body.data.id);
+    client.test("201 Created", () => client.assert(response.status === 201));
+%}
+
+### 4) 수정 → 200
+PUT {{host}}/api/posts/{{postId}}
+Authorization: Basic {{loginId}} {{password}}
+Content-Type: application/json
+
+{
+  "categoryId": 2,
+  "title": "API로 고친 글",
+  "content": "수정했습니다."
+}
+
+### 5) 다른 사람이 수정 → 403 NOT_AUTHOR
+PUT {{host}}/api/posts/{{postId}}
+Authorization: Basic {{otherLoginId}} {{password}}
+Content-Type: application/json
+
+{
+  "categoryId": 2,
+  "title": "남의 글 수정 시도",
+  "content": "막혀야 정상"
+}
+
+### 6) 검증 실패 → 400 INVALID_INPUT + fieldErrors
+POST {{host}}/api/posts
+Authorization: Basic {{loginId}} {{password}}
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "title": "",
+  "content": ""
+}
+
+### 7) 인증 없이 작성 → 401 UNAUTHORIZED
+POST {{host}}/api/posts
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "title": "로그인 안 함",
+  "content": "막혀야 정상"
+}
+
+### 8) 삭제 → 204 No Content (소프트 삭제)
+DELETE {{host}}/api/posts/{{postId}}
+Authorization: Basic {{loginId}} {{password}}
+
+### 9) 삭제한 글 조회 → 404 POST_NOT_FOUND
+GET {{host}}/api/posts/{{postId}}

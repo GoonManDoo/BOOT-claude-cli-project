@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${title}">게시글 관리</title>
+    <link rel="stylesheet" th:href="@{/css/board.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<main>
+    <!--/* 게시글 관리(/admin/posts)와 신고된 글(/admin/reports)이 같은 화면을 쓴다 */-->
+    <h2 th:text="${title}">게시글 관리</h2>
+    <p><a th:href="@{/admin}">관리자 홈</a></p>
+    <table class="post-table">
+        <thead><tr><th>번호</th><th>제목</th><th>작성자</th><th>상태</th><th>신고</th><th>작성일</th><th>관리</th></tr></thead>
+        <tbody>
+        <tr th:if="${posts.empty}"><td colspan="7" class="empty">게시글이 없습니다.</td></tr>
+        <tr th:each="p : ${posts.content}" th:classappend="${p.deleted} ? 'muted'">
+            <td th:text="${p.id}">1</td>
+            <td class="title">
+                <span th:if="${p.notice}" class="badge">공지</span>
+                <a th:unless="${p.deleted}" th:href="@{/posts/{id}(id=${p.id})}" th:text="${p.title}">제목</a>
+                <span th:if="${p.deleted}" th:text="${p.title}">삭제된 글 제목</span>
+            </td>
+            <td th:text="${p.authorNickname}">작성자</td>
+            <td th:text="${p.status()}">공개</td>
+            <td th:text="${p.reportCount}">0</td>
+            <td th:text="${#temporals.format(p.createdAt, 'yyyy-MM-dd HH:mm')}">2026-01-01</td>
+            <td>
+                <form th:unless="${p.deleted or p.hidden}" th:action="@{/admin/posts/{id}/hide(id=${p.id})}" method="post" class="inline">
+                    <input type="hidden" name="returnTo" th:value="${listPath}">
+                    <button type="submit">숨기기</button>
+                </form>
+                <form th:if="${!p.deleted and p.hidden}" th:action="@{/admin/posts/{id}/restore(id=${p.id})}" method="post" class="inline">
+                    <input type="hidden" name="returnTo" th:value="${listPath}">
+                    <button type="submit">복구</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <nav class="pagination" th:if="${nav.totalPages > 1}">
+        <th:block th:each="n : ${#numbers.sequence(nav.startPage, nav.endPage)}">
+            <strong th:if="${n == nav.currentPage}" th:text="${n}">1</strong>
+            <a th:unless="${n == nav.currentPage}" th:href="@{${listPath}(page=${n})}" th:text="${n}">2</a>
+        </th:block>
+    </nav>
+</main>
+</body>
+</html>

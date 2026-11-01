@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${post.title}">게시글</title>
+    <!--/* fetch 요청에 CSRF 토큰을 헤더로 붙이기 위해 화면에 심어 둔다 */-->
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <link rel="stylesheet" th:href="@{/css/board.css}">
+    <script th:src="@{/js/post-like.js}" defer></script>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main>
+    <p th:if="${flashMessage}" class="info" th:text="${flashMessage}">메시지</p>
+    <p th:if="${post.hidden}" class="warning">숨김 처리된 글입니다. 관리자에게만 보입니다.</p>
+
+    <article class="post">
+        <p class="meta">
+            <span th:if="${post.notice}" class="badge">공지</span>
+            <a th:href="@{/posts(categoryId=${post.categoryId})}" th:text="${post.categoryName}">자유</a>
+        </p>
+        <h2 th:text="${post.title}">제목</h2>
+        <p class="meta">
+            <strong th:text="${post.authorNickname}">작성자</strong>
+            · 조회 <span th:text="${post.viewCount}">0</span>
+            · <span th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">작성일</span>
+            <span th:if="${holidayName}" class="holiday" th:text="|(공휴일: ${holidayName})|">(공휴일: 설날)</span>
+            <span th:if="${post.edited}">(수정됨)</span>
+        </p>
+        <!--/* th:text는 HTML을 이스케이프한다 → 본문에 <script>를 써도 실행되지 않는다 (XSS 방지) */-->
+        <div class="content" th:text="${post.content}">내용</div>
+
+        <div class="images" th:unless="${post.images.empty}">
+            <img th:each="img : ${post.images}" th:src="@{${img.url}}" th:alt="${img.originalName}" loading="lazy">
+        </div>
+
+        <div class="like">
+            <button sec:authorize="isAuthenticated()" id="like-button" type="button"
+                    th:data-url="@{/posts/{id}/like(id=${post.id})}"
+                    th:data-liked="${liked}"
+                    th:text="${liked} ? '♥ 좋아요 취소' : '♡ 좋아요'">♡ 좋아요</button>
+            <span sec:authorize="isAnonymous()">♡ <a th:href="@{/login}">로그인</a> 후 좋아요를 누를 수 있습니다.</span>
+            <span>좋아요 <strong id="like-count" th:text="${post.likeCount}">0</strong></span>
+        </div>
+
+        <!--/* 버튼은 작성자에게만 보이지만, 진짜 막는 곳은 서버(PostService.validateAuthor)다 */-->
+        <div class="actions" th:if="${isAuthor and !post.hidden}">
+            <a th:href="@{/posts/{id}/edit(id=${post.id})}" class="button">수정</a>
+            <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post" class="inline"
+                  onsubmit="return confirm('게시글을 삭제할까요?');">
+                <button type="submit">삭제</button>
+            </form>
+        </div>
+
+        <!--/* 신고: 로그인한 다른 사람의 글에만 보인다 */-->
+        <div class="report" sec:authorize="isAuthenticated()" th:if="${!isAuthor and !post.hidden}">
+            <details>
+                <summary>신고하기</summary>
+                <form th:action="@{/posts/{id}/report(id=${post.id})}" method="post"
+                      onsubmit="return confirm('이 글을 신고할까요? 신고는 취소할 수 없습니다.');">
+                    <input type="text" name="reason" maxlength="200" placeholder="신고 사유 (선택)">
+                    <button type="submit">신고</button>
+                </form>
+            </details>
+        </div>
+        <p th:if="${reportMessage}" class="info" th:text="${reportMessage}">신고가 접수되었습니다.</p>
+
+        <p><a th:href="@{/posts}">목록으로</a></p>
+    </article>
+
+    <section id="comments" class="comments">
+        <h3>댓글 <span th:text="${commentCount}">0</span></h3>
+        <p class="error" th:if="${commentError}" th:text="${commentError}">에러</p>
+
+        <ul class="comment-list">
+            <li th:each="c : ${comments}" th:id="|comment-${c.id}|">
+                <div th:replace="~{fragments/comment :: item(${c}, false)}"></div>
+                <ul class="reply-list" th:unless="${c.replies.empty}">
+                    <li th:each="r : ${c.replies}" th:id="|comment-${r.id}|">
+                        <div th:replace="~{fragments/comment :: item(${r}, true)}"></div>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+
+        <form sec:authorize="isAuthenticated()" th:if="${!post.hidden}"
+              th:action="@{/posts/{id}/comments(id=${post.id})}" method="post" class="comment-form">
+            <textarea name="content" rows="3" maxlength="1000" placeholder="댓글을 입력하세요" required></textarea>
+            <button type="submit">댓글 등록</button>
+        </form>
+        <p sec:authorize="isAnonymous()"><a th:href="@{/login}">로그인</a> 후 댓글을 쓸 수 있습니다.</p>
+    </section>
+</main>
+</body>
+</html>

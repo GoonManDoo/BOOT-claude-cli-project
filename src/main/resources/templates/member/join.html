@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>회원가입</title>
+    <style>
+        .field { margin-bottom: 12px; }
+        .error { color: #d32f2f; font-size: 0.9em; }
+        input.has-error { border-color: #d32f2f; }
+    </style>
+</head>
+<body>
+<h1>회원가입</h1>
+
+<!-- th:action을 쓰면 CSRF 토큰(hidden input)이 자동으로 들어간다 -->
+<form th:action="@{/members/join}" th:object="${joinRequest}" method="post">
+
+    <div class="field">
+        <label for="loginId">아이디</label><br>
+        <input type="text" th:field="*{loginId}" th:errorclass="has-error" placeholder="4~20자">
+        <div class="error" th:if="${#fields.hasErrors('loginId')}" th:errors="*{loginId}">아이디 에러</div>
+    </div>
+
+    <div class="field">
+        <label for="password">비밀번호</label><br>
+        <!-- 비밀번호는 다시 보여 주지 않도록 th:field 대신 name만 지정 -->
+        <input type="password" id="password" name="password" th:classappend="${#fields.hasErrors('password')} ? 'has-error'" placeholder="8자 이상">
+        <div class="error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">비밀번호 에러</div>
+    </div>
+
+    <div class="field">
+        <label for="nickname">닉네임</label><br>
+        <input type="text" th:field="*{nickname}" th:errorclass="has-error">
+        <div class="error" th:if="${#fields.hasErrors('nickname')}" th:errors="*{nickname}">닉네임 에러</div>
+    </div>
+
+    <div class="field">
+        <label for="email">이메일</label><br>
+        <input type="email" th:field="*{email}" th:errorclass="has-error">
+        <div class="error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">이메일 에러</div>
+    </div>
+
+    <button type="submit">가입하기</button>
+</form>
+
+<p><a th:href="@{/}">홈으로</a></p>
+</body>
+</html>

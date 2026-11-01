@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--/*
+    댓글 하나. 일반 댓글과 대댓글이 같은 모양을 쓴다.
+    c: CommentResponse, isReply: 대댓글이면 true (대댓글에는 답글 버튼이 없다)
+    post, loginMemberId는 detail.html의 모델 값을 그대로 쓴다.
+*/-->
+<div th:fragment="item(c, isReply)" class="comment">
+    <p th:if="${c.deleted}" class="deleted" th:text="${c.content}">삭제된 댓글입니다</p>
+
+    <th:block th:unless="${c.deleted}">
+        <p class="meta">
+            <strong th:text="${c.authorNickname}">작성자</strong>
+            · <span th:text="${#temporals.format(c.createdAt, 'yyyy-MM-dd HH:mm')}">작성일</span>
+        </p>
+        <p class="comment-content" th:text="${c.content}">내용</p>
+
+        <div class="comment-actions">
+            <th:block th:if="${loginMemberId != null and c.authorId == loginMemberId}">
+                <details>
+                    <summary>수정</summary>
+                    <form th:action="@{/comments/{id}/edit(id=${c.id})}" method="post">
+                        <textarea name="content" rows="2" maxlength="1000" required th:text="${c.content}"></textarea>
+                        <button type="submit">수정 완료</button>
+                    </form>
+                </details>
+                <form th:action="@{/comments/{id}/delete(id=${c.id})}" method="post" class="inline"
+                      onsubmit="return confirm('댓글을 삭제할까요?');">
+                    <button type="submit">삭제</button>
+                </form>
+            </th:block>
+
+            <details th:if="${!isReply and loginMemberId != null}">
+                <summary>답글</summary>
+                <form th:action="@{/posts/{postId}/comments(postId=${post.id})}" method="post">
+                    <input type="hidden" name="parentId" th:value="${c.id}">
+                    <textarea name="content" rows="2" maxlength="1000" placeholder="답글을 입력하세요" required></textarea>
+                    <button type="submit">답글 등록</button>
+                </form>
+            </details>
+        </div>
+    </th:block>
+</div>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${noticeMode} ? '공지 쓰기' : (${postId} ? '글 수정' : '글쓰기')">글쓰기</title>
+    <link rel="stylesheet" th:href="@{/css/board.css}">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main>
+    <!--/* 글쓰기, 글 수정, 공지 쓰기가 같은 화면을 쓴다. postId가 있으면 수정, noticeMode면 공지 */-->
+    <h2 th:text="${noticeMode} ? '공지 쓰기' : (${postId} ? '글 수정' : '글쓰기')">글쓰기</h2>
+
+    <!--/* 파일을 보내려면 enctype="multipart/form-data"가 필요하다 */-->
+    <form th:action="${noticeMode} ? @{/admin/notices} : (${postId} ? @{/posts/{id}/edit(id=${postId})} : @{/posts})"
+          th:object="${postRequest}" method="post" enctype="multipart/form-data" class="post-form" id="post-form">
+        <div class="field">
+            <label for="categoryId">분류</label>
+            <select th:field="*{categoryId}" th:errorclass="has-error">
+                <option value="">선택하세요</option>
+                <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}">자유</option>
+            </select>
+            <div class="error" th:if="${#fields.hasErrors('categoryId')}" th:errors="*{categoryId}">분류 에러</div>
+        </div>
+        <div class="field">
+            <label for="title">제목</label>
+            <input type="text" th:field="*{title}" th:errorclass="has-error" maxlength="100">
+            <div class="error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">제목 에러</div>
+        </div>
+        <div class="field">
+            <label for="content">내용</label>
+            <textarea th:field="*{content}" th:errorclass="has-error" rows="15"></textarea>
+            <div class="error" th:if="${#fields.hasErrors('content')}" th:errors="*{content}">내용 에러</div>
+        </div>
+
+        <div class="field" th:if="${existingImages != null and !existingImages.empty}">
+            <label>첨부된 이미지 (삭제할 이미지를 체크)</label>
+            <div class="image-grid">
+                <label th:each="img : ${existingImages}" class="image-item">
+                    <img th:src="@{${img.url}}" th:alt="${img.originalName}">
+                    <span><input type="checkbox" name="deleteImageIds" th:value="${img.id}"> 삭제</span>
+                    <small th:text="${img.originalName}">a.png</small>
+                </label>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="images">이미지 추가 (jpg, png, gif, webp / 최대 5장, 장당 5MB)</label>
+            <input type="file" id="images" name="images" multiple accept=".jpg,.jpeg,.png,.gif,.webp">
+            <div class="error" th:if="${#fields.hasErrors('images')}" th:errors="*{images}">이미지 에러</div>
+            <div class="error" id="image-client-error"></div>
+        </div>
+
+        <button type="submit">저장</button>
+        <a th:href="${postId} ? @{/posts/{id}(id=${postId})} : @{/posts}">취소</a>
+    </form>
+</main>
+
+<script>
+    // 큰 파일을 서버로 보내기 전에 화면에서 먼저 막는다 (편의 기능일 뿐, 진짜 검사는 서버가 한다)
+    document.getElementById('post-form').addEventListener('submit', (event) => {
+        const files = document.getElementById('images').files;
+        const errorEl = document.getElementById('image-client-error');
+        const tooBig = Array.from(files).find(f => f.size > 5 * 1024 * 1024);
+        if (files.length > 5) {
+            errorEl.textContent = '이미지는 최대 5장까지 올릴 수 있습니다.';
+            event.preventDefault();
+        } else if (tooBig) {
+            errorEl.textContent = '이미지는 한 장에 5MB까지 올릴 수 있습니다: ' + tooBig.name;
+            event.preventDefault();
+        }
+    });
+</script>
+</body>
+</html>
